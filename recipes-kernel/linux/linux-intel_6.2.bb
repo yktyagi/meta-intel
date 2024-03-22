@@ -11,7 +11,7 @@ DEPENDS += "elfutils-native openssl-native util-linux-native"
 LINUX_VERSION_EXTENSION ??= "-mainline-tracking-${LINUX_KERNEL_TYPE}"
 
 LINUX_VERSION ?= "6.2.0"
-SRCREV_machine ?= "da96c5fe8e1222da818618e15dbc956022228306"
+SRCREV_machine ?= "a04f35e20aafc12bbd1714b6f13ee421bb09cf6f"
 SRCREV_meta ?= "aeb1ad4a2a72e2acf206fac02da0551fbd29b9d5"
 
 # Functionality flags
