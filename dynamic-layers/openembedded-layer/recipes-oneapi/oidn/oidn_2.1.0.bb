@@ -21,3 +21,5 @@ inherit cmake
 DEPENDS += "tbb ispc-native"
 
 UPSTREAM_CHECK_URI = "https://github.com/OpenImageDenoise/oidn/releases"
+
+INSANE_SKIP:${PN} = "useless-rpaths"
