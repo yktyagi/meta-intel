@@ -6,12 +6,12 @@ that works across a wide range of accelerators."
 HOMEPAGE = "https://github.com/intel/libvpl"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c18ea6bb4786a26bf4eee88a7424a408 \
-                    file://third-party-programs.txt;md5=ddf05049184e74942f45b0ca4cc69b8a"
+                    file://third-party-programs.txt;md5=a7af995ed33a1fad14b4ef92e6801994"
 
 SRC_URI = "git://github.com/intel/libvpl.git;protocol=https;branch=main \
            file://0001-vpl.pc.in-dont-pass-pcfiledir-to-cflags.patch \
             "
-SRCREV = "025d43d086a3e663184cb49febe86152bf05409f"
+SRCREV = "c45b5d786bf7cdabbe49ff1bab78693ad78feb78"
 S = "${WORKDIR}/git"
 
 inherit cmake
@@ -24,7 +24,7 @@ EXTRA_OECMAKE = "-DBUILD_EXAMPLES=ON"
 
 do_install:append() {
         mkdir -p ${D}${datadir}/VPL/samples
-        mv ${D}${bindir}/hello-* ${D}${datadir}/VPL/samples
+        install -m 755 ${B}/hello-* ${D}${datadir}/VPL/samples
 }
 
 COMPATIBLE_HOST = '(x86_64).*-linux'
