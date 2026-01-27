@@ -15,6 +15,8 @@ inherit oneapi-installer
 COMPILERMAINVER = "2025.3"
 ONEAPI_COMPONENT_NAME = "dpcpp-compiler"
 
+SRC_URI += "file://vars.sh"
+
 # Use same license as runtime
 LIC_FILES_CHKSUM = "file://${WORKDIR}/compiler/${COMPILERMAINVER}/share/doc/compiler/licensing/c/LICENSE;md5=6174ce91a14a1d1a59d5a13a410cb2b4"
 
@@ -28,6 +30,11 @@ fakeroot do_install() {
     # Install compiler files
     install -d ${D}/opt/intel/oneapi/compiler/${COMPILERMAINVER}
     cp -a ${WORKDIR}/compiler/${COMPILERMAINVER}/* ${D}/opt/intel/oneapi/compiler/${COMPILERMAINVER}/
+    
+    # Install environment setup script
+    install -d ${D}/opt/intel/oneapi/compiler/${COMPILERMAINVER}/env
+    install -m 0644 ${UNPACKDIR}/vars.sh ${D}/opt/intel/oneapi/compiler/${COMPILERMAINVER}/env/
+    
     chown -R root:root ${D}/opt/intel/oneapi/
 }
 
