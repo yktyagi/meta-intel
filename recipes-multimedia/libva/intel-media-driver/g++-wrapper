@@ -1,0 +1,67 @@
+#!/bin/bash
+# Wrapper for g++ that moves include paths to CPLUS_INCLUDE_PATH environment variable.
+# This bypasses kernel ARG_MAX limits when building in deep workspace paths.
+#
+# Problem: Intel media driver has 653 include directories. In deep workspace paths
+# (e.g., /very/long/path/.../yocto_master/build/...), the total command-line length
+# exceeds Linux's 2MB ARG_MAX limit when GCC spawns cc1plus internally.
+#
+# Solution: Extract -I and -isystem flags (from response files OR command line) and 
+# set CPLUS_INCLUDE_PATH. Environment variables don't count against ARG_MAX.
+#
+# Works with any toolchain: poky, nodistro, custom distros, x86/x86-64.
+
+REAL_GXX="/to/be/replaced/by/recipe"
+
+# Check for response file in arguments
+RESPONSE_FILE=""
+for arg in "$@"; do
+    if [[ "$arg" == @* ]] && [[ -f "${arg:1}" ]]; then
+        RESPONSE_FILE="${arg:1}"
+        break
+    fi
+done
+
+if [ -n "$RESPONSE_FILE" ]; then
+    # Extract includes from response file
+    INCLUDES=$(grep -o '\-I[^ ]*\|\-isystem [^ ]*' "$RESPONSE_FILE" | sed 's/^-I//;s/^-isystem //' | tr '\n' ':' | sed 's/:$//')
+    OTHER_ARGS=()
+    for arg in "$@"; do
+        [[ "$arg" != @* ]] && OTHER_ARGS+=("$arg")
+    done
+    
+    if [ -n "$INCLUDES" ]; then
+        export CPLUS_INCLUDE_PATH="$INCLUDES"
+        NEW_RSP=$(mktemp)
+        trap "rm -f $NEW_RSP" EXIT
+        sed 's/ \?-I[^ ]*//g; s/ \?-isystem [^ ]*//g' "$RESPONSE_FILE" > "$NEW_RSP"
+        exec "$REAL_GXX" @"$NEW_RSP" "${OTHER_ARGS[@]}"
+    fi
+else
+    # Extract includes from command line arguments
+    INCLUDES=""
+    OTHER_ARGS=()
+    skip_next=0
+    
+    for arg in "$@"; do
+        if [ $skip_next -eq 1 ]; then
+            INCLUDES="${INCLUDES}${arg}:"
+            skip_next=0
+        elif [[ "$arg" == -I* ]]; then
+            INCLUDES="${INCLUDES}${arg#-I}:"
+        elif [[ "$arg" == "-isystem" ]]; then
+            skip_next=1
+        else
+            OTHER_ARGS+=("$arg")
+        fi
+    done
+    
+    if [ -n "$INCLUDES" ]; then
+        export CPLUS_INCLUDE_PATH="${INCLUDES%:}"
+        exec "$REAL_GXX" "${OTHER_ARGS[@]}"
+    fi
+fi
+
+# No includes found or no optimizations needed - pass through
+exec "$REAL_GXX" "$@"
+
