@@ -114,6 +114,15 @@ do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${B}/ispc-stage2/bin/ispc ${D}${bindir}/
     install -m 0755 ${B}/ispc-stage2/bin/check_isa ${D}${bindir}/
+    
+    # Install tests for gio validation (ispc-test package)
+    install -d ${D}${libdir}/ispc/gio
+    install -m 0755 ${S}/scripts/run_tests.py ${D}${libdir}/ispc/gio/
+    install -m 0644 ${S}/scripts/common.py ${D}${libdir}/ispc/gio/
+    cp -r ${S}/tests ${D}${libdir}/ispc/gio/
+    cp ${S}/test_static.isph ${D}${libdir}/ispc/gio/ || true
+    cp ${S}/fail_db.txt ${D}${libdir}/ispc/gio/ || true
+    cp ${S}/test_static.cpp ${D}${libdir}/ispc/gio/ || true
 }
 
 do_install_ptest() {
@@ -124,6 +133,28 @@ do_install_ptest() {
     cp ${S}/test_static.isph ${D}${PTEST_PATH}/ || true
     cp ${S}/fail_db.txt ${D}${PTEST_PATH}/ || true
     cp ${S}/test_static.cpp ${D}${PTEST_PATH}/ || true
+}
+
+PACKAGES =+ "${PN}-test"
+FILES:${PN}-test = "${libdir}/ispc/gio/*"
+RDEPENDS:${PN}-test += "bash python3-multiprocessing ${PN}"
+
+pkg_postinst:${PN}() {
+    #!/bin/sh
+    # Create /lib64 symlink if it doesn't exist (needed for ispc binary built with /lib64 interpreter path)
+    if [ -z "$D" ]; then
+        # Runtime installation
+        if [ ! -e /lib64/ld-linux-x86-64.so.2 ] && [ -e /lib/ld-linux-x86-64.so.2 ]; then
+            mkdir -p /lib64
+            ln -sf /lib/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+        fi
+    else
+        # Image creation time
+        if [ ! -e $D/lib64/ld-linux-x86-64.so.2 ] && [ -e $D/lib/ld-linux-x86-64.so.2 ]; then
+            mkdir -p $D/lib64
+            ln -sf /lib/ld-linux-x86-64.so.2 $D/lib64/ld-linux-x86-64.so.2
+        fi
+    fi
 }
 
 # ISPC compiler - also available as native/nativesdk for build-time use

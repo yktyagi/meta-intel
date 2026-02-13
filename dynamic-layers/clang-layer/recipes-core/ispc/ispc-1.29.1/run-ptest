@@ -4,7 +4,7 @@
 cd /usr/lib/ispc/ptest
 
 # Run the test suite with minimal and fast tests
-python3 run_tests.py -t 1 --verbose --compiler=g++ 2>&1 | \
+python3 run_tests.py --target=sse2-i32x4 --verbose --compiler=g++ 2>&1 | \
 while IFS= read -r line; do
     case "$line" in
         *"PASSED"*|*passed*)
