@@ -45,25 +45,38 @@ SKIP_FILEDEPS:${PN}-compiler = "1"
 SKIP_FILEDEPS:${PN}-common = "1"
 SKIP_FILEDEPS:${PN}-licensing = "1"
 SKIP_FILEDEPS:${PN}-mkl = "1"
+SKIP_FILEDEPS:${PN}-mkl-sycl = "1"
+SKIP_FILEDEPS:${PN}-mkl-staticdev = "1"
+SKIP_FILEDEPS:${PN}-mkl-dev = "1"
 SKIP_FILEDEPS:${PN}-tbb = "1"
 SKIP_FILEDEPS:${PN}-dpl = "1"
 SKIP_FILEDEPS:${PN}-debugger = "1"
 SKIP_FILEDEPS:${PN}-ipp = "1"
+SKIP_FILEDEPS:${PN}-ipp-staticdev = "1"
+SKIP_FILEDEPS:${PN}-ipp-dev = "1"
 SKIP_FILEDEPS:${PN}-ccl = "1"
 SKIP_FILEDEPS:${PN}-vtune = "1"
 SKIP_FILEDEPS:${PN}-onednn = "1"
 
-ONEAPI_INSANE = "textrel dev-so dev-elf ldflags already-stripped staticdev rpaths arch useless-rpaths file-rdeps libdir buildpaths host-user-contaminated installed-vs-shipped 32bit-time"
+# dev-deps is set on the meta-package and -common because the umbrella
+# RDEPENDS pulls the -mkl-dev / -ipp-dev sub-packages so a single
+# IMAGE_INSTALL of intel-oneapi-toolkit still ships the full SDK.
+ONEAPI_INSANE = "textrel dev-so dev-elf ldflags already-stripped staticdev rpaths arch useless-rpaths file-rdeps libdir buildpaths host-user-contaminated installed-vs-shipped 32bit-time dev-deps"
 INSANE_SKIP:${PN} += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-runtime += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-compiler += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-common += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-licensing += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-mkl += "${ONEAPI_INSANE}"
+INSANE_SKIP:${PN}-mkl-sycl += "${ONEAPI_INSANE}"
+INSANE_SKIP:${PN}-mkl-staticdev += "${ONEAPI_INSANE}"
+INSANE_SKIP:${PN}-mkl-dev += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-tbb += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-dpl += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-debugger += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-ipp += "${ONEAPI_INSANE}"
+INSANE_SKIP:${PN}-ipp-staticdev += "${ONEAPI_INSANE}"
+INSANE_SKIP:${PN}-ipp-dev += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-ccl += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-vtune += "${ONEAPI_INSANE}"
 INSANE_SKIP:${PN}-onednn += "${ONEAPI_INSANE}"
@@ -154,13 +167,22 @@ SYSROOT_DIRS += "/opt"
 
 # Sub-packages. Order matters in PACKAGES — first-match wins for FILES
 # patterns, so put specific component packages before the catch-all ${PN}.
+# Within a component, list the more specific sub-subpackages (-sycl,
+# -staticdev, -dev) before the component's own catch-all so the
+# heavyweight bits land in their dedicated package and not in the
+# default runtime package.
 PACKAGES =+ " \
     ${PN}-runtime \
     ${PN}-compiler \
+    ${PN}-mkl-sycl \
+    ${PN}-mkl-staticdev \
+    ${PN}-mkl-dev \
     ${PN}-mkl \
     ${PN}-tbb \
     ${PN}-dpl \
     ${PN}-debugger \
+    ${PN}-ipp-staticdev \
+    ${PN}-ipp-dev \
     ${PN}-ipp \
     ${PN}-ccl \
     ${PN}-vtune \
@@ -181,8 +203,43 @@ FILES:${PN}-common = " \
 FILES:${PN}-onednn = "/opt/intel/oneapi/dnnl"
 FILES:${PN}-tbb = "/opt/intel/oneapi/tbb"
 FILES:${PN}-dpl = "/opt/intel/oneapi/dpl"
+# MKL is split four ways. Order in PACKAGES above ensures the specific
+# patterns match before the catch-all /opt/intel/oneapi/mkl.
+#
+#   -mkl-sycl       GPU/SYCL offload libraries (~470 MB)
+#   -mkl-staticdev  Static archives, lib/intel64/*.a (~900 MB)
+#   -mkl-dev        Headers, cmake/pkgconfig modules, share/ examples
+#   -mkl            CPU runtime shared libs + env/etc/bin + symlinks
+FILES:${PN}-mkl-sycl = "/opt/intel/oneapi/mkl/[0-9]*/lib/libmkl_sycl*"
+FILES:${PN}-mkl-staticdev = "/opt/intel/oneapi/mkl/[0-9]*/lib/*.a"
+FILES:${PN}-mkl-dev = " \
+    /opt/intel/oneapi/mkl/[0-9]*/include \
+    /opt/intel/oneapi/mkl/[0-9]*/lib/cmake \
+    /opt/intel/oneapi/mkl/[0-9]*/lib/pkgconfig \
+    /opt/intel/oneapi/mkl/[0-9]*/share \
+"
 FILES:${PN}-mkl = "/opt/intel/oneapi/mkl"
 FILES:${PN}-debugger = "/opt/intel/oneapi/debugger"
+# IPP is split three ways. ippcp (Cryptography Primitives) is bundled
+# with ipp in this distribution and shares the same split policy.
+#
+#   -ipp-staticdev  Static archives, lib/intel64/*.a (~560 MB)
+#   -ipp-dev        Headers, cmake/pkgconfig modules, share/ examples
+#   -ipp            Runtime shared libs + env/etc/bin + symlinks
+FILES:${PN}-ipp-staticdev = " \
+    /opt/intel/oneapi/ipp/[0-9]*/lib/*.a \
+    /opt/intel/oneapi/ippcp/[0-9]*/lib/*.a \
+"
+FILES:${PN}-ipp-dev = " \
+    /opt/intel/oneapi/ipp/[0-9]*/include \
+    /opt/intel/oneapi/ipp/[0-9]*/lib/cmake \
+    /opt/intel/oneapi/ipp/[0-9]*/lib/pkgconfig \
+    /opt/intel/oneapi/ipp/[0-9]*/share \
+    /opt/intel/oneapi/ippcp/[0-9]*/include \
+    /opt/intel/oneapi/ippcp/[0-9]*/lib/cmake \
+    /opt/intel/oneapi/ippcp/[0-9]*/lib/pkgconfig \
+    /opt/intel/oneapi/ippcp/[0-9]*/share \
+"
 FILES:${PN}-ipp = " \
     /opt/intel/oneapi/ipp \
     /opt/intel/oneapi/ippcp \
@@ -202,26 +259,56 @@ FILES:${PN}-runtime = " \
 "
 
 # Inter-package dependencies.
-RDEPENDS:${PN}-compiler  += "${PN}-runtime ${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-mkl       += "${PN}-runtime ${PN}-common ${PN}-licensing ${PN}-tbb"
-RDEPENDS:${PN}-tbb       += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-dpl       += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-debugger  += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-ipp       += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-ccl       += "${PN}-runtime ${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-vtune     += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-onednn    += "${PN}-common ${PN}-licensing"
-RDEPENDS:${PN}-runtime   += "virtual-opencl-icd zlib level-zero-loader bash tcsh libxml2 ${PN}-common ${PN}-licensing"
+#
+# Hard RDEPENDS are intentionally minimal -- only the link/load-time
+# closure the dynamic linker will demand at runtime. This lets a
+# consumer install a single subpackage (e.g. intel-oneapi-toolkit-mkl
+# for PyTorch CPU BLAS) without dragging in the full bundle.
+#
+#   * -common    : setvars.sh / modulefiles / version-umbrella dirs.
+#                  Required only when the consumer sources env/vars.sh;
+#                  apps that link the .so files directly do not need it.
+#   * -runtime   : OpenCL/Level Zero ICD shim + libxml2 SONAME compat.
+#                  Required only for SYCL/GPU offload paths. Pure CPU
+#                  MKL/IPP/oneDNN do not need it.
+#   * -licensing : EULA text (~1 MB). Kept on every binary subpackage.
+#   * -tbb       : oneTBB shared library. Required by every component
+#                  whose libraries link -ltbb (mkl, compiler, onednn).
+RDEPENDS:${PN}-licensing += ""
+RDEPENDS:${PN}-common    += "${PN}-licensing"
+RDEPENDS:${PN}-runtime   += "virtual-opencl-icd zlib level-zero-loader bash libxml2 ${PN}-licensing"
+RDEPENDS:${PN}-tbb       += "${PN}-licensing"
+RDEPENDS:${PN}-dpl       += "${PN}-licensing"
+RDEPENDS:${PN}-debugger  += "${PN}-licensing"
+RDEPENDS:${PN}-ipp           += "${PN}-licensing"
+RDEPENDS:${PN}-ipp-dev       += "${PN}-ipp"
+RDEPENDS:${PN}-ipp-staticdev += "${PN}-ipp-dev"
+RDEPENDS:${PN}-vtune     += "${PN}-licensing"
+RDEPENDS:${PN}-mkl           += "${PN}-tbb ${PN}-licensing"
+RDEPENDS:${PN}-mkl-sycl      += "${PN}-mkl ${PN}-runtime"
+RDEPENDS:${PN}-mkl-dev       += "${PN}-mkl"
+RDEPENDS:${PN}-mkl-staticdev += "${PN}-mkl-dev"
+RDEPENDS:${PN}-onednn    += "${PN}-tbb ${PN}-licensing"
+RDEPENDS:${PN}-compiler  += "${PN}-runtime ${PN}-common ${PN}-tbb ${PN}-licensing"
+RDEPENDS:${PN}-ccl       += "${PN}-runtime ${PN}-licensing"
 
-# Top-level meta package pulls in the full bundle.
+# Top-level meta package pulls in the full bundle, including the
+# heavyweight optional pieces (SYCL/GPU offload libs, static archives
+# and development headers) so that "IMAGE_INSTALL += intel-oneapi-toolkit"
+# behaves like the legacy single-package install.
 RDEPENDS:${PN} = " \
     ${PN}-compiler \
     ${PN}-runtime \
     ${PN}-mkl \
+    ${PN}-mkl-sycl \
+    ${PN}-mkl-staticdev \
+    ${PN}-mkl-dev \
     ${PN}-tbb \
     ${PN}-dpl \
     ${PN}-debugger \
     ${PN}-ipp \
+    ${PN}-ipp-staticdev \
+    ${PN}-ipp-dev \
     ${PN}-ccl \
     ${PN}-vtune \
     ${PN}-onednn \
