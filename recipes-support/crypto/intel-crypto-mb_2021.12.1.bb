@@ -26,3 +26,7 @@ COMPATIBLE_HOST = '(x86_64).*-linux'
 
 EXTRA_OECMAKE += " -DARCH=intel64"
 EXTRA_OECMAKE += " -DTOOLCHAIN_OPTIONS='${TOOLCHAIN_OPTIONS}'"
+
+# Upstream sources in this release trigger a GCC unused-but-set-variable warning
+# in SM4 code paths; keep the build strict while avoiding this known false-positive.
+TOOLCHAIN_OPTIONS:append = " -Wno-error=unused-but-set-variable"
