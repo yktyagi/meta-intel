@@ -1,0 +1,46 @@
+From 5fcab2d02c5a304137403454f3b13dff96d3cbd2 Mon Sep 17 00:00:00 2001
+From: Rudi Heitbaum <rudi@heitbaum.com>
+Date: Mon, 1 Dec 2025 12:24:42 +0000
+Subject: [PATCH] Fixed build with -std=c++20
+
+upcoming gcc-16 will change the default to c++20
+
+fixes:
+    ../decode/mpeg2vldemo.cpp:82:5: error: either all initializer
+clauses should be designated or none of them should be
+       82 |     {
+          |     ^
+
+Backport of upstream commit 5fcab2d02c5a, adapted to the v2.22 release
+branch which uses the GNU colon-style designators (member: value)
+rather than the C99 dot-style (.member = value) used on master. The
+nested clauses are designated using the same colon style as the rest
+of the initializer.
+
+Upstream-Status: Backport [https://github.com/intel/libva-utils/commit/5fcab2d02c5a304137403454f3b13dff96d3cbd2]
+
+Signed-off-by: Rudi Heitbaum <rudi@heitbaum.com>
+Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
+---
+ decode/mpeg2vldemo.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/decode/mpeg2vldemo.cpp b/decode/mpeg2vldemo.cpp
+index c6bfbe3..e1f6ac9 100644
+--- a/decode/mpeg2vldemo.cpp
++++ b/decode/mpeg2vldemo.cpp
+@@ -79,8 +79,10 @@ static VAPictureParameterBufferMPEG2 pic_param = {
+     backward_reference_picture: 0xffffffff,
+     picture_coding_type: 1,
+     f_code: 0xffff,
+-    {
+-        {
++    picture_coding_extension:
++    {
++        bits:
++        {
+             intra_dc_precision: 0,
+             picture_structure: 3,
+             top_field_first: 0,
+-- 
+2.34.1
