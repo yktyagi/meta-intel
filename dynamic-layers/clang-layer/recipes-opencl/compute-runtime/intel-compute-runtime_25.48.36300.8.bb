@@ -11,6 +11,9 @@ LIC_FILES_CHKSUM = "file://LICENSE.md;md5=eca6ec6997e18db166db7109cdbe611c \
 SRC_URI = "git://github.com/intel/compute-runtime.git;protocol=https;branch=releases/25.48 \
            file://0002-Build-not-able-to-locate-cpp_generation_tool.patch \
            file://0003-external-ocloc.patch \
+           file://0004-refactor-use-std-numeric_limits-to-get-max-value.patch \
+           file://0005-include-cstdint-for-drm-tip-helper.patch \
+           file://0006-test-excludes-include-cstdint.patch \
            "
 
 SRCREV = "762b34beb3f6991e57d1562f587ab91ff220d708"
@@ -41,6 +44,10 @@ EXTRA_OECMAKE:append:class-target = " \
                                      -Docloc_cmd_prefix=ocloc \
                                      -DCMAKE_CROSSCOMPILING_EMULATOR=${WORKDIR}/qemuwrapper \
                                      "
+
+# Newer compilers emit -Wsfinae-incomplete in templates included by image.cpp/task_information.cpp.
+# Keep -Werror globally but do not fail on this single warning class.
+CXXFLAGS:append = " -Wno-error=sfinae-incomplete"
 
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[levelzero] = "-DBUILD_WITH_L0=ON, -DBUILD_WITH_L0=OFF, level-zero"

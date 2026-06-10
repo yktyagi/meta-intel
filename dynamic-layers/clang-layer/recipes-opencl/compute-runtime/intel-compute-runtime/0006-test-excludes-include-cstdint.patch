@@ -1,0 +1,32 @@
+From c6f4f71684d40f96f0f401ecf5f873fc855b9231 Mon Sep 17 00:00:00 2001
+From: Yogesh Tyagi <yogesh.tyagi@intel.com>
+Date: Tue, 10 Jun 2026 00:00:00 +0000
+Subject: [PATCH] test excludes include cstdint
+
+Fixes compile failure in shared test helper where uint32_t is used
+without including <cstdint>.
+
+Upstream already added this include on master; backported here for the
+pinned releases/25.48 branch:
+  d682c49ef1c9782873ed3c7684e6a07180531b48
+  ("test: add more missing headers for GCC 15")
+
+Upstream-Status: Backport [https://github.com/intel/compute-runtime/commit/d682c49ef1c9782873ed3c7684e6a07180531b48]
+
+Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
+---
+ .../shared/test/common/test_macros/test_excludes.cpp        | 1 +
+ 1 file changed, 1 insertion(+)
+
+Index: intel-compute-runtime-25.48.36300.8/shared/test/common/test_macros/test_excludes.cpp
+===================================================================
+--- intel-compute-runtime-25.48.36300.8.orig/shared/test/common/test_macros/test_excludes.cpp
++++ intel-compute-runtime-25.48.36300.8/shared/test/common/test_macros/test_excludes.cpp
+@@ -12,6 +12,7 @@
+ #include <map>
+ #include <memory>
+ #include <string>
++#include <cstdint>
+ #include <unordered_set>
+ 
+ using namespace NEO;
