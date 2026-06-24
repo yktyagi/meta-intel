@@ -1,0 +1,45 @@
+From a1b2c3d4e5f60718293a4b5c6d7e8f9012345678 Mon Sep 17 00:00:00 2001
+From: Yogesh Tyagi <yogesh.tyagi@intel.com>
+Date: Mon, 16 Jun 2025 10:00:00 +0530
+Subject: [PATCH] BiFModuleCache: guard TARGET_FILE with prebuilt LLVM
+
+With prebuilt LLVM the llvm-as, llvm-link and opt tools are referenced
+by their bare names and resolved through PATH instead of being CMake
+targets. Evaluating $<TARGET_FILE:opt> in that case fails the configure
+step with 'No target "opt"'. Only use the TARGET_FILE generator
+expression when the tool is actually a build target, matching the
+existing guard already used for llvm-dis.
+
+Upstream-Status: Inappropriate [oe specific]
+
+Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
+---
+ IGC/BiFModule/cmake/BiFModuleCache.cmake | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/IGC/BiFModule/cmake/BiFModuleCache.cmake b/IGC/BiFModule/cmake/BiFModuleCache.cmake
+index 225dfa25b..5ef20f1dc 100644
+--- a/IGC/BiFModule/cmake/BiFModuleCache.cmake
++++ b/IGC/BiFModule/cmake/BiFModuleCache.cmake
+@@ -85,16 +85,16 @@ function(build_bif_bitcode bifModuleDepends)
+   set(bif-llvm-opt_exe ${LLVM_OPT_EXE})
+ 
+   if(NOT (IGC_OPTION__LLVM_MODE STREQUAL PREBUILDS_MODE_NAME AND WIN32))
+-    if(NOT EXISTS ${LLVM_AS_EXE})
++    if(NOT EXISTS ${LLVM_AS_EXE} AND TARGET ${LLVM_AS_EXE})
+       set(bif-llvm-as_exe $<TARGET_FILE:${LLVM_AS_EXE}>)
+     endif()
+     if(NOT EXISTS ${LLVM_DIS_EXE} AND TARGET ${LLVM_DIS_EXE})
+       set(bif-llvm-dis_exe $<TARGET_FILE:${LLVM_DIS_EXE}>)
+     endif()
+-    if(NOT EXISTS ${LLVM_LINK_EXE})
++    if(NOT EXISTS ${LLVM_LINK_EXE} AND TARGET ${LLVM_LINK_EXE})
+       set(bif-llvm-link_exe $<TARGET_FILE:${LLVM_LINK_EXE}>)
+     endif()
+-    if(NOT EXISTS ${LLVM_OPT_EXE})
++    if(NOT EXISTS ${LLVM_OPT_EXE} AND TARGET ${LLVM_OPT_EXE})
+       set(bif-llvm-opt_exe $<TARGET_FILE:${LLVM_OPT_EXE}>)
+     endif()
+   endif()
+-- 
+2.34.1

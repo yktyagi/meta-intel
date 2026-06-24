@@ -1,0 +1,182 @@
+From ef779c8c2d63b20d71e9acfbc574795f381b8f6f Mon Sep 17 00:00:00 2001
+From: Yogesh Tyagi <yogesh.tyagi@intel.com>
+Date: Thu, 25 Jun 2026 10:47:00 +0800
+Subject: [PATCH] BiFModule: add signed-offset vloadn/vstoren builtins
+
+The SPIR-V -> LLVM-IR reader lowers the OpenCL.std vloadn/vstoren
+extended instructions to calls whose 32/64-bit offset is mangled as a
+signed integer, and (for vloadn) whose pointer carries no const
+qualifier, because SPIR-V has no notion of const. The existing integer
+and floating-point vloadn/vstoren definitions only provide unsigned
+offset (and const pointer for vloadn) variants, so the reader-emitted
+references such as _Z24__spirv_ocl_vloadn_Rint4lPU3AS1ii and
+_Z19__spirv_ocl_vstorenDv4_ilPU3AS1i are left unresolved when a kernel
+is compiled from prebuilt SPIR-V (ocloc -spirv_input).
+
+Add matching signed-offset, non-const-pointer overloads, mirroring the
+hand-written bfloat builtins in bfloat/IBiF_BFloat.ll.
+
+Upstream-Status: Pending
+
+Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
+---
+ .../include/vload_vstore_impl.h               | 90 +++++++++++++++++++
+ IGC/BiFModule/Implementation/vload.cl         | 12 +++
+ IGC/BiFModule/Implementation/vstore.cl        | 12 +++
+ 3 files changed, 114 insertions(+)
+
+diff --git a/IGC/BiFModule/Implementation/include/vload_vstore_impl.h b/IGC/BiFModule/Implementation/include/vload_vstore_impl.h
+index f6bc36b..feee343 100644
+--- a/IGC/BiFModule/Implementation/include/vload_vstore_impl.h
++++ b/IGC/BiFModule/Implementation/include/vload_vstore_impl.h
+@@ -56,6 +56,55 @@ SPDX-License-Identifier: MIT
+     VLOADN_AS(private, TYPE, RMANGLING)
+ #endif // __OPENCL_C_VERSION__ >= CL_VERSION_2_0
+ 
++//*****************************************************************************/
++// vloadn (SPIR-V friendly-IR form)
++//
++// The SPIR-V -> LLVM-IR reader lowers the OpenCL.std "vloadn" extended
++// instruction to a call whose i64/i32 offset is mangled as a *signed* integer
++// and whose pointer carries no const qualifier (SPIR-V has no notion of const).
++// The default vloadn definitions above use an unsigned offset and a const
++// pointer, so those reader-emitted references would otherwise stay unresolved.
++// Provide matching signed-offset, non-const-pointer overloads. This mirrors the
++// hand-written bfloat builtins in bfloat/IBiF_BFloat.ll.
++//*****************************************************************************/
++
++#define VLOADN_DEF_SNC(addressSpace, scalarType, numElements, offsetType, rmangling) \
++    INLINE                            scalarType##numElements                        \
++        __attribute__((overloadable)) __spirv_ocl_vloadn_R##rmangling##numElements(  \
++            offsetType offset, addressSpace scalarType *p, int n)                    \
++    {                                                                                \
++        addressSpace scalarType *pOffset = p + offset * numElements;                 \
++        scalarType##numElements  ret;                                                \
++        __builtin_IB_memcpy_##addressSpace##_to_private(                             \
++            (private uchar *)&ret,                                                   \
++            (addressSpace uchar *)pOffset,                                           \
++            sizeof(scalarType) * numElements,                                        \
++            sizeof(scalarType));                                                     \
++        return ret;                                                                  \
++    }
++
++#define VLOADN_AS_SNC(addressSpace, scalarType, rmangling)         \
++    VLOADN_DEF_SNC(addressSpace, scalarType, 2, long, rmangling)   \
++    VLOADN_DEF_SNC(addressSpace, scalarType, 3, long, rmangling)   \
++    VLOADN_DEF_SNC(addressSpace, scalarType, 4, long, rmangling)   \
++    VLOADN_DEF_SNC(addressSpace, scalarType, 8, long, rmangling)   \
++    VLOADN_DEF_SNC(addressSpace, scalarType, 16, long, rmangling)
++
++#if (__OPENCL_C_VERSION__ >= CL_VERSION_2_0)
++#define VLOADN_TYPE_SNC(TYPE, RMANGLING)     \
++    VLOADN_AS_SNC(global, TYPE, RMANGLING)   \
++    VLOADN_AS_SNC(constant, TYPE, RMANGLING) \
++    VLOADN_AS_SNC(local, TYPE, RMANGLING)    \
++    VLOADN_AS_SNC(private, TYPE, RMANGLING)  \
++    VLOADN_AS_SNC(generic, TYPE, RMANGLING)
++#else
++#define VLOADN_TYPE_SNC(TYPE, RMANGLING)     \
++    VLOADN_AS_SNC(global, TYPE, RMANGLING)   \
++    VLOADN_AS_SNC(constant, TYPE, RMANGLING) \
++    VLOADN_AS_SNC(local, TYPE, RMANGLING)    \
++    VLOADN_AS_SNC(private, TYPE, RMANGLING)
++#endif // __OPENCL_C_VERSION__ >= CL_VERSION_2_0
++
+ //*****************************************************************************/
+ // vstoren
+ // "Writes n components from the data vector value to the address computed as (p + (offset * n)),
+@@ -100,4 +149,45 @@ SPDX-License-Identifier: MIT
+     VSTOREN_AS(private, TYPE, TYPEMANG, p0##TYPEMANG)
+ #endif // __OPENCL_C_VERSION__ >= CL_VERSION_2_0
+ 
++//*****************************************************************************/
++// vstoren (SPIR-V friendly-IR form)
++//
++// As with vloadn, the SPIR-V -> LLVM-IR reader mangles the vstoren offset as a
++// *signed* integer. Provide matching signed-offset overloads (the vstoren
++// pointer is already non-const). Mirrors bfloat/IBiF_BFloat.ll.
++//*****************************************************************************/
++
++#define VSTOREN_DEF_S(addressSpace, scalarType, numElements, offsetType)             \
++    INLINE void __attribute__((overloadable)) __spirv_ocl_vstoren(                   \
++        scalarType##numElements data, offsetType offset, addressSpace scalarType *p) \
++    {                                                                                \
++        addressSpace scalarType *pOffset = p + offset * numElements;                 \
++        scalarType##numElements  ret     = data;                                     \
++        __builtin_IB_memcpy_private_to_##addressSpace(                               \
++            (addressSpace uchar *)pOffset,                                           \
++            (private uchar *)&ret,                                                   \
++            sizeof(scalarType) * numElements,                                        \
++            sizeof(scalarType));                                                     \
++    }
++
++#define VSTOREN_AS_S(addressSpace, scalarType)        \
++    VSTOREN_DEF_S(addressSpace, scalarType, 2, long)  \
++    VSTOREN_DEF_S(addressSpace, scalarType, 3, long)  \
++    VSTOREN_DEF_S(addressSpace, scalarType, 4, long)  \
++    VSTOREN_DEF_S(addressSpace, scalarType, 8, long)  \
++    VSTOREN_DEF_S(addressSpace, scalarType, 16, long)
++
++#if (__OPENCL_C_VERSION__ >= CL_VERSION_2_0)
++#define VSTOREN_TYPE_S(TYPE)    \
++    VSTOREN_AS_S(global, TYPE)  \
++    VSTOREN_AS_S(local, TYPE)   \
++    VSTOREN_AS_S(private, TYPE) \
++    VSTOREN_AS_S(generic, TYPE)
++#else
++#define VSTOREN_TYPE_S(TYPE)    \
++    VSTOREN_AS_S(global, TYPE)  \
++    VSTOREN_AS_S(local, TYPE)   \
++    VSTOREN_AS_S(private, TYPE)
++#endif // __OPENCL_C_VERSION__ >= CL_VERSION_2_0
++
+ #endif // __VLOAD_VSTORE_IMPL_H__
+diff --git a/IGC/BiFModule/Implementation/vload.cl b/IGC/BiFModule/Implementation/vload.cl
+index 399b56c..2a5d88e 100644
+--- a/IGC/BiFModule/Implementation/vload.cl
++++ b/IGC/BiFModule/Implementation/vload.cl
+@@ -33,6 +33,18 @@ VLOADN_TYPE(float, float)
+ VLOADN_TYPE(double, double)
+ #endif
+ 
++// Signed-offset, non-const-pointer overloads matching the SPIR-V friendly-IR
++// references emitted by the SPIR-V -> LLVM-IR reader (see vload_vstore_impl.h).
++VLOADN_TYPE_SNC(char, char)
++VLOADN_TYPE_SNC(short, short)
++VLOADN_TYPE_SNC(int, int)
++VLOADN_TYPE_SNC(long, long)
++VLOADN_TYPE_SNC(half, half)
++VLOADN_TYPE_SNC(float, float)
++#if defined(cl_khr_fp64)
++VLOADN_TYPE_SNC(double, double)
++#endif
++
+ // "When extended by the cl_khr_fp16 extension, the generic type gentypen is extended to include half"
+ #define VLOADN_SCALAR_HALF_DEF(addressSpace, offsetType, mangle)                                 \
+ INLINE half __attribute__((overloadable)) __spirv_ocl_vloadn_Rhalf(                              \
+diff --git a/IGC/BiFModule/Implementation/vstore.cl b/IGC/BiFModule/Implementation/vstore.cl
+index b8728c8..9705ed8 100644
+--- a/IGC/BiFModule/Implementation/vstore.cl
++++ b/IGC/BiFModule/Implementation/vstore.cl
+@@ -65,6 +65,18 @@ VSTOREN_TYPE(float,  f32)
+ VSTOREN_TYPE(double, f64)
+ #endif
+ 
++// Signed-offset overloads matching the SPIR-V friendly-IR references emitted by
++// the SPIR-V -> LLVM-IR reader (see vload_vstore_impl.h).
++VSTOREN_TYPE_S(char)
++VSTOREN_TYPE_S(short)
++VSTOREN_TYPE_S(int)
++VSTOREN_TYPE_S(long)
++VSTOREN_TYPE_S(half)
++VSTOREN_TYPE_S(float)
++#if defined(cl_khr_fp64)
++VSTOREN_TYPE_S(double)
++#endif
++
+ //*****************************************************************************/
+ // vstore_half
+ // "Converts the data float or double value to a half value using the default rounding mode
+-- 
+2.43.0
+

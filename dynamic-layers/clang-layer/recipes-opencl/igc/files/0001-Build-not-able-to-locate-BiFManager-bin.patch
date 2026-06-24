@@ -3,25 +3,49 @@ From: Yogesh Tyagi <yogesh.tyagi@intel.com>
 Date: Thu, 2 Jan 2025 15:59:27 +0530
 Subject: [PATCH] Build not able to locate BiFManager-bin
 
+BiFManager-bin is a target executable that is invoked from the
+BiFBuildBitcode cmake script via execute_process. Because the script is
+run with "cmake -P", CMAKE_CROSSCOMPILING_EMULATOR is not applied
+automatically, so the cross built BiFManager-bin cannot locate its
+target sysroot libraries and silently fails to produce OCLBiFImpl.h.
+
+Forward the cross compiling emulator (the qemu wrapper) into the script
+and prepend it to the BiFManager-bin invocation so the tool runs under
+qemu during a cross build. When building natively the emulator variable
+is empty and expands to nothing.
+
 Upstream-Status: Inappropriate [oe specific]
 
 Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
 ---
- IGC/BiFModule/CMakeLists.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ IGC/BiFModule/cmake/BiFBuildBitcode.cmake | 2 +-
+ IGC/BiFModule/cmake/BiFModuleCache.cmake  | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-Index: git/IGC/BiFModule/CMakeLists.txt
-===================================================================
---- git.orig/IGC/BiFModule/CMakeLists.txt
-+++ git/IGC/BiFModule/CMakeLists.txt
-@@ -655,8 +655,8 @@ set(IGC_BUILD__PROJ__BiFModuleCache_OCL
- 
- add_custom_command(
-     OUTPUT "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.h" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bifbc"
--    COMMAND $<TARGET_FILE:BiFManager-bin> "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bifbc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.h"
--    DEPENDS "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc"$<TARGET_FILE:BiFManager-bin>
-+    COMMAND BiFManager-bin "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bifbc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.h"
-+    DEPENDS "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc" BiFManager-bin
-     COMMENT "BiF: ${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc: Spliting output .bc."
-     COMMAND_EXPAND_LISTS
+diff --git a/IGC/BiFModule/cmake/BiFBuildBitcode.cmake b/IGC/BiFModule/cmake/BiFBuildBitcode.cmake
+index 2a68f8cda..eef638286 100644
+--- a/IGC/BiFModule/cmake/BiFBuildBitcode.cmake
++++ b/IGC/BiFModule/cmake/BiFBuildBitcode.cmake
+@@ -520,7 +520,7 @@ igc_bif_build_bc(
  )
+ 
+ execute_process(
+-    COMMAND ${BiFManager-bin} "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bifbc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.h"
++    COMMAND ${IGC_CROSSCOMPILING_EMULATOR} ${BiFManager-bin} "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_32.bc" "${IGC_BUILD__BIF_DIR}/IGCsize_t_64.bc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.bifbc" "${IGC_BUILD__BIF_DIR}/OCLBiFImpl.h"
+   COMMAND_ECHO STDOUT
+ )
+ message("[IGC\\BiFModuleCache] - Buidling from source end")
+diff --git a/IGC/BiFModule/cmake/BiFModuleCache.cmake b/IGC/BiFModule/cmake/BiFModuleCache.cmake
+index 225dfa25b..81e803135 100644
+--- a/IGC/BiFModule/cmake/BiFModuleCache.cmake
++++ b/IGC/BiFModule/cmake/BiFModuleCache.cmake
+@@ -122,6 +122,7 @@ function(build_bif_bitcode bifModuleDepends)
+             -DPYTHON_EXECUTABLE="${PYTHON_EXECUTABLE}"
+             -Dclang-tool=$<TARGET_FILE:clang-tool>
+             -DBiFManager-bin=$<TARGET_FILE:BiFManager-bin>
++            -DIGC_CROSSCOMPILING_EMULATOR=${CMAKE_CROSSCOMPILING_EMULATOR}
+             -DIGC_BUILD__BIF_ROOT_DIR="${IGC_BUILD__BIF_ROOT_DIR}"
+             -DVME_TYPES_DEFINED="${VME_TYPES_DEFINED}"
+             -DBIF_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+-- 
+2.34.1
