@@ -3,39 +3,40 @@ From: Dongwon Kim <dongwon.kim@intel.com>
 Date: Sat, 21 Aug 2021 16:09:39 -0700
 Subject: [PATCH 2/5] Build not able to locate cpp_generation_tool.
 
+Pass cpp_generate_tool by name instead of its target file path so it is
+resolved through PATH (the qemu wrapper) when the builtin kernels are
+generated during a cross build.
+
 Upstream-Status: Inappropriate [oe specific]
 
 Signed-off-by: Naveen Saini <naveen.kumar.saini@intel.com>
 Signed-off-by: Dongwon Kim <dongwon.kim@intel.com>
+Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
 ---
- shared/source/built_ins/kernels/CMakeLists.txt | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ shared/source/built_ins/kernels/CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Index: intel-compute-runtime-25.48.36300.8/shared/source/built_ins/kernels/CMakeLists.txt
-===================================================================
---- intel-compute-runtime-25.48.36300.8.orig/shared/source/built_ins/kernels/CMakeLists.txt
-+++ intel-compute-runtime-25.48.36300.8/shared/source/built_ins/kernels/CMakeLists.txt
-@@ -118,9 +118,9 @@ function(compile_builtin core_type platf
-       endif()
+diff --git a/shared/source/built_ins/kernels/CMakeLists.txt b/shared/source/built_ins/kernels/CMakeLists.txt
+index 469f2f90b5..97dd508a8f 100644
+--- a/shared/source/built_ins/kernels/CMakeLists.txt
++++ b/shared/source/built_ins/kernels/CMakeLists.txt
+@@ -77,7 +77,7 @@ function(compile_builtin_with_prefix core_type platform_it builtin bits builtin_
        add_custom_command(
                           OUTPUT ${OUTPUT_FILE_CPP}
--                         COMMAND $<TARGET_FILE:cpp_generate_tool> --file ${BINARY_OUTPUT}.bin --output ${OUTPUT_FILE_CPP} --array ${mode}_${BASENAME} --device ${RELEASE_FILENAME}
-+                         COMMAND cpp_generate_tool --file ${BINARY_OUTPUT}.bin --output ${OUTPUT_FILE_CPP} --array ${mode}_${BASENAME} --device ${RELEASE_FILENAME}
+                          COMMAND ${ocloc_cmd_prefix} -q -file ${absolute_filepath_spv} -spirv_input -device ${RELEASE} -heapless_mode ${heapless_flag} ${builtin_options} -${bits} -stateful_address_mode ${stateful_addr_mode} -output ${mode_prefix}_${BASENAME}_${RELEASE_FILENAME} -output_no_suffix -out_dir ${OUTPUTDIR} ${internal_options} -options "$<JOIN:${__ocloc__options__}, >"
+-                         COMMAND $<TARGET_FILE:cpp_generate_tool> --file ${BINARY_OUTPUT}.bin --output ${TEMP_OUTPUT_FILE_CPP} --array ${mode_prefix}_${BASENAME} --device ${RELEASE_FILENAME}
++                         COMMAND cpp_generate_tool --file ${BINARY_OUTPUT}.bin --output ${TEMP_OUTPUT_FILE_CPP} --array ${mode_prefix}_${BASENAME} --device ${RELEASE_FILENAME}
+                          COMMAND ${CMAKE_COMMAND} -E rename ${TEMP_OUTPUT_FILE_CPP} ${OUTPUT_FILE_CPP}
                           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
--                         DEPENDS ${OUTPUT_FILES_BINARIES} $<TARGET_FILE:cpp_generate_tool>
-+                         DEPENDS ${OUTPUT_FILES_BINARIES} cpp_generate_tool
-       )
-       list(APPEND BUILTINS_COMMANDS "${OUTPUT_FILE_CPP}")
-     else()
-@@ -172,9 +172,9 @@ function(generate_cpp_spirv builtin)
-     endif()
+                          DEPENDS ${OUTPUT_FILE_SPV} ocloc copy_compiler_files ${OUTPUT_FILES_BINARIES_PREV} cpp_generate_tool
+@@ -136,7 +136,7 @@ function(generate_cpp_spirv builtin mode_prefix builtin_options is_wide)
      add_custom_command(
                         OUTPUT ${OUTPUT_FILE_CPP}
--                       COMMAND $<TARGET_FILE:cpp_generate_tool> --file ${GENERATED_SPV_INPUT} --output ${OUTPUT_FILE_CPP} --array ${BASENAME}
-+                       COMMAND cpp_generate_tool --file ${GENERATED_SPV_INPUT} --output ${OUTPUT_FILE_CPP} --array ${BASENAME}
+                        COMMAND ${ocloc_cmd_prefix} -q -spv_only -file "${absolute_filepath}" -out_dir "${OUTPUTDIR}" -output "${mode_prefix}_${BASENAME}" ${builtin_options} -output_no_suffix -options "${KERNEL_OPTIONS}"
+-                       COMMAND $<TARGET_FILE:cpp_generate_tool> --file ${GENERATED_SPV_INPUT} --output ${TEMP_OUTPUT_FILE_CPP} --array ${mode_prefix}_${BASENAME}
++                       COMMAND cpp_generate_tool --file ${GENERATED_SPV_INPUT} --output ${TEMP_OUTPUT_FILE_CPP} --array ${mode_prefix}_${BASENAME}
+                        COMMAND ${CMAKE_COMMAND} -E rename ${TEMP_OUTPUT_FILE_CPP} ${OUTPUT_FILE_CPP}
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
--                       DEPENDS ${GENERATED_SPV_INPUT} $<TARGET_FILE:cpp_generate_tool>
-+                       DEPENDS ${GENERATED_SPV_INPUT} cpp_generate_tool
-     )
-     set(OUTPUT_LIST_CPP_FILES ${OUTPUT_LIST_CPP_FILES} ${OUTPUT_FILE_CPP} PARENT_SCOPE)
-   else()
+                        DEPENDS ${INPUT_FILENAME} ocloc copy_compiler_files ${OUTPUT_FILES_SPIRV_PREV} cpp_generate_tool
+-- 
+2.34.1
