@@ -10,33 +10,16 @@ Upstream-Status: Pending
 
 Signed-off-by: Anuj Mittal <anuj.mittal@intel.com>
 ---
- sources/ippcp/crypto_mb/src/CMakeLists.txt | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
 diff --git a/sources/ippcp/crypto_mb/src/CMakeLists.txt b/sources/ippcp/crypto_mb/src/CMakeLists.txt
-index c9cad06..31f52bd 100644
+index cce67a1..0a8b92c 100644
 --- a/sources/ippcp/crypto_mb/src/CMakeLists.txt
 +++ b/sources/ippcp/crypto_mb/src/CMakeLists.txt
-@@ -123,8 +123,8 @@ endif(DYNAMIC_LIB OR MB_STANDALONE)
- # Installation of the shared library
- if (MB_STANDALONE) # standalone crypto_mb's cmake run
-     install(TARGETS ${MB_DYN_LIB_TARGET}
--            LIBRARY DESTINATION "lib"
--            RUNTIME DESTINATION "lib"
-+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-+            RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-             PUBLIC_HEADER DESTINATION "include/crypto_mb")
- elseif (DYNAMIC_LIB) # build from ippcp's cmake
-     install(TARGETS ${MB_DYN_LIB_TARGET}
-@@ -154,7 +154,7 @@ endif()
- # Static lib installation
- if(MB_STANDALONE)
-     install(TARGETS ${MB_STATIC_LIB_TARGET}
--            ARCHIVE DESTINATION "lib"
-+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-             PUBLIC_HEADER DESTINATION "include/crypto_mb")
+@@ -205,7 +205,7 @@ set(MB_LIB_TARGET ${MB_DYN_LIB_TARGET})
+ 
+ # Install destination
+ if (MB_STANDALONE)
+-    set(MBX_LIB_INSTALL_DIR "lib")
++    set(MBX_LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+     set(MBX_PRIVATE_HEADERS_DIR "tools/staticlib/crypto_mb")
  else()
-     install(TARGETS ${MB_STATIC_LIB_TARGET}
--- 
-2.37.3
-
+     set(MBX_LIB_INSTALL_DIR "lib/intel64")
