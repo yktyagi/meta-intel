@@ -4,10 +4,10 @@ Resource Director Technology (Intel(R) RDT)"
 HOMEPAGE = "https://github.com/intel/intel-cmt-cat"
 
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=4b63c65942e1c16fd897f8cd20abebf8"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=bd50e7e2ac1189caa30191dabbf7ecfb"
 
 SRC_URI = "git://github.com/intel/intel-cmt-cat;protocol=https;branch=master"
-SRCREV = "17629d0b726875836af6c7d9cb38b8ed23f32089"
+SRCREV = "dae129762e411d0d4709c74bc143d93475aeea11"
 
 COMPATIBLE_HOST = '(x86_64).*-linux'
 COMPATIBLE_HOST:libc-musl = "null"
