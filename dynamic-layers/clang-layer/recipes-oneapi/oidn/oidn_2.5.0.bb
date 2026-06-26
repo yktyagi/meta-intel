@@ -13,7 +13,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=3b83ef96387f14655fc854ddc3c6bd57 \
 
 SRC_URI = "https://github.com/RenderKit/${BPN}/releases/download/v${PV}/${BPN}-${PV}.src.tar.gz\
            "
-SRC_URI[sha256sum] = "9c7c77ae0d57e004479cddb7aaafd405c2cc745153bed4805413c21be610e17b"
+SRC_URI[sha256sum] = "96c3a46122759803d5f6701ffba4bef6eac0981dced5279e66f2815e3ed3c2cc"
 
 S = "${UNPACKDIR}/${BPN}-${PV}"
 
