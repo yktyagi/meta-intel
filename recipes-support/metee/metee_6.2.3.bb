@@ -13,5 +13,12 @@ inherit cmake
 SRC_URI = "git://github.com/intel/metee.git;branch=master;protocol=https \
            file://0001-Suppress-sign-conversion-warning-only-for-ioctl-call.patch \
 "
-SRCREV = "93784f62070b2bc4e84b51e23c9add61f7600444"
+SRCREV = "67ff323aead437557d9a7309803aae79cd5b2d56"
+
+# Upstream CMake only installs the C metee.h public header. Consumers such
+# as lms include the header-only C++ wrapper <meteepp.h>, so install it
+# alongside metee.h.
+do_install:append() {
+    install -m 0644 ${S}/include/meteepp.h ${D}${includedir}/
+}
 
