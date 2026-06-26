@@ -9,9 +9,9 @@ LICENSE  = "Apache-2.0-with-LLVM-exception"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2e982d844baa4df1c80de75470e0c5cb \
                     file://third-party-programs.txt;md5=409cd5c825a23043b6bb347861d34b35"
 
-SRC_URI = "git://github.com/uxlfoundation/oneDPL.git;protocol=https;branch=release/2022.11.0 \
+SRC_URI = "git://github.com/uxlfoundation/oneDPL.git;protocol=https;branch=release/2022.12.0 \
             "
-SRCREV = "1a9da9fb4d2dace64ace7dac3ce6072a13ecd35d"
+SRCREV = "f8a7af46fe73e44cc1f64e8f02e9a25cc9155d1a"
 
 do_compile[noexec] = "1"
 do_configure[noexec] = "1"
