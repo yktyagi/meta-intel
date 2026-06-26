@@ -18,7 +18,7 @@ inherit pkgconfig cmake
 
 SRC_URI = "git://github.com/openvkl/openvkl.git;protocol=https;branch=master \
            "
-SRCREV = "8c6ba526813b871a624cb9d73d4cbb689ac7f4ce"
+SRCREV = "cd7277281cf43d1027752f8d272074fad4fb0a03"
 
 COMPATIBLE_HOST = '(x86_64).*-linux'
 COMPATIBLE_HOST:libc-musl = "null"
