@@ -11,7 +11,7 @@ Signed-off-by: Yogesh Tyagi <yogesh.tyagi@intel.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/firmware/CMakeLists.txt b/firmware/CMakeLists.txt
-index 0c093ca..ba346a0 100644
+index d480c82..e6cd281 100644
 --- a/firmware/CMakeLists.txt
 +++ b/firmware/CMakeLists.txt
 @@ -12,7 +12,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE include)
@@ -21,8 +21,8 @@ index 0c093ca..ba346a0 100644
 -    DESTINATION /lib/firmware/updates/intel/vpu/
 +    DESTINATION ${CMAKE_INSTALL_FIRMWARE_DIR}/firmware/updates/intel/vpu/
      PERMISSIONS OWNER_READ
-     COMPONENT fw-npu)
- endif()
+     COMPONENT fw-npu
+     EXCLUDE_FROM_ALL)
+
 -- 
 2.37.3
-
