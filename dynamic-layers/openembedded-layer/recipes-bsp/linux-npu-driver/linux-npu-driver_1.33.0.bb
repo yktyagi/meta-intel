@@ -24,6 +24,13 @@ SRCREV_FORMAT = "linux-npu-driver_npu-compiler-elf_yaml-cpp_lzvext_googletest"
 
 inherit cmake pkgconfig
 
+# Upstream installs the NPU firmware under a dedicated "fw-npu" CMake component
+# marked EXCLUDE_FROM_ALL, so the default "cmake --install" skips it and the
+# ${PN}-firmware package ends up empty. Install that component explicitly.
+do_install:append() {
+    DESTDIR='${D}' cmake --install '${B}' --component fw-npu
+}
+
 COMPATIBLE_HOST = '(x86_64).*-linux'
 COMPATIBLE_HOST:libc-musl = 'null'
 
