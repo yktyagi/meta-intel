@@ -11,7 +11,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=c18ea6bb4786a26bf4eee88a7424a408 \
 SRC_URI = "git://github.com/intel/libvpl-tools.git;protocol=https;branch=main \
           "
 
-SRCREV = "ad9deecaf0ee76f689373b55fe620c843e3c8a4d"
+SRCREV = "3de25bf3358de6d68633aeb915a2564808197315"
 
 inherit cmake pkgconfig
 
