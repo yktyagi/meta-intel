@@ -17,17 +17,16 @@ SRC_URI = "git://github.com/ispc/ispc.git;protocol=https;nobranch=1;name=ispc;de
            file://run-ptest \
            "
 
-# Bundled LLVM 20.1 and dependencies for superbuild
+# Bundled LLVM 23.1 and dependencies for superbuild
 SRC_URI += "git://github.com/llvm/llvm-project.git;protocol=https;nobranch=1;name=llvm;destsuffix=git/llvm-project \
             git://github.com/intel/vc-intrinsics.git;protocol=https;nobranch=1;name=vc;destsuffix=git/vc-intrinsics \
             git://github.com/KhronosGroup/SPIRV-LLVM-Translator.git;protocol=https;nobranch=1;name=spirv;destsuffix=git/SPIRV-LLVM-Translator \
-            file://0002-llvm-update-CMake-policy-CMP0116-to-NEW.patch;patchdir=${UNPACKDIR}/git/llvm-project \
             "
 
-SRCREV_ispc = "dba3a5196219f2419da2dabbd863870c46cddd80"
-SRCREV_llvm = "87f0227cb60147a26a1eeb4fb06e3b505e9c7261"
-SRCREV_vc = "b16218b8a00c5c1d4db32085dfab4d5eb9a03ad7"
-SRCREV_spirv = "d1c69c3365dffed67124eb1692cb941cbae5bb2e"
+SRCREV_ispc = "c6adb4f86f5678ce6c41951b1e2b59f727455697"
+SRCREV_llvm = "6be53ab5da701ca6939c818fbe8cdbb633ab2409"
+SRCREV_vc = "c9c1011e61c5aaa30c421d1feaedc7c74a9b67c1"
+SRCREV_spirv = "5b7e49f0aebe7a64f2da82a3525d8468b174ba46"
 
 SRCREV_FORMAT = "ispc_llvm_vc_spirv"
 
@@ -37,11 +36,11 @@ COMPATIBLE_HOST = '(x86_64).*-linux'
 
 # Skip QA check for file-rdeps since superbuild stage2 links against build host libraries
 # This is acceptable for a build tool that runs on the build host
-# Skip buildpaths since LLVM 20.1 stage2 build embeds debug paths in binaries
+# Skip buildpaths since LLVM 23.1 stage2 build embeds debug paths in binaries
 INSANE_SKIP:${PN} += "file-rdeps buildpaths"
 INSANE_SKIP:${PN}-dbg += "buildpaths"
 
-# Only need native tools for building, LLVM 20.1 is bundled
+# Only need native tools for building, LLVM 23.1 is bundled
 # ARCHITECTURAL NOTE: This recipe uses a superbuild approach that builds LLVM internally.
 # CMake isolation flags prevent the superbuild from finding libraries in recipe-sysroot-native.
 # 
@@ -53,7 +52,7 @@ PACKAGECONFIG ??= ""
 # Default to Threads tasking model; override with TBB if enabled
 PACKAGECONFIG[tbb] = "-DISPCRT_BUILD_TASK_MODEL=TBB, , tbb"
 
-# Use superbuild with bundled LLVM 20.1
+# Use superbuild with bundled LLVM 23.1
 OECMAKE_SOURCEPATH = "${S}/superbuild"
 
 # Minimal patching of generated toolchain files to use full compiler paths
@@ -75,7 +74,7 @@ do_configure:append() {
 
 EXTRA_OECMAKE += " \
                   --preset os \
-                  -DLLVM_VERSION=20.1 \
+                  -DLLVM_VERSION=23.1 \
                   -DLLVM_DISABLE_ASSERTIONS=ON \
                   -DLLVM_ENABLE_LIBEDIT=OFF \
                   -DLLVM_ENABLE_TERMINFO=OFF \
@@ -86,7 +85,7 @@ EXTRA_OECMAKE += " \
                   -DVC_INTRINSICS_SHA=${SRCREV_vc} \
                   -DSPIRV_TRANSLATOR_URL=${UNPACKDIR}/git/SPIRV-LLVM-Translator \
                   -DSPIRV_TRANSLATOR_SHA=${SRCREV_spirv} \
-                  -DSPIRV_TRANSLATOR_BRANCH=llvm_release_201 \
+                  -DSPIRV_TRANSLATOR_BRANCH=llvm_release_231 \
                   -DISPC_CORPUS_URL=null \
                   -DISPC_CROSS=ON \
                   -DISPCRT_BUILD_TASK_MODEL=Threads \
@@ -108,7 +107,7 @@ EXTRA_OECMAKE += " \
                   "
 
 do_compile() {
-    bbnote "Building ispc with bundled LLVM 20.1"
+    bbnote "Building ispc with bundled LLVM 23.1"
     
     # Scope environment clearing to just the cmake build command
     # This prevents Yocto cross-compilation flags from contaminating the host superbuild
@@ -128,6 +127,13 @@ do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${B}/ispc-stage2/bin/ispc ${D}${bindir}/
     install -m 0755 ${B}/ispc-stage2/bin/check_isa ${D}${bindir}/
+
+    # Install the bundled stdlib headers (amx.isph, intrinsics, ispcrt, ...)
+    # next to the binary. ispc resolves #include <*.isph> relative to its
+    # own executable (${bindir}/../include), so consumers such as oidn that
+    # pull in <amx.isph> for the AMX code path need this tree present.
+    install -d ${D}${includedir}
+    cp -r ${B}/ispc-stage2/include/. ${D}${includedir}/
 }
 
 do_install:append:class-target() {
