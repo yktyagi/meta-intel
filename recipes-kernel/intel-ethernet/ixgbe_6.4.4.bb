@@ -10,7 +10,7 @@ LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BP}/COPYING;md5=a216b4192dc6b777b6f0db
 SRC_URI = "https://github.com/intel/ethernet-linux-ixgbe/releases/download/v${PV}/${BP}.tar.gz \
            "
 
-SRC_URI[sha256sum] = "1bb6a63bf2502bfd205ba55e48ef6486754b1823ed330cb103ac1a590544abe6"
+SRC_URI[sha256sum] = "29f6787dfe81466f4776c0cd2998465ff63b773dc5fb0bc937960a9ebb29c216"
 
 UPSTREAM_CHECK_URI = "https://github.com/intel/ethernet-linux-ixgbe/releases"
 UPSTREAM_CHECK_REGEX = "ixgbe-(?P<pver>\d+(\.\d+)+)\.tar\.gz"
