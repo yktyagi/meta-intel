@@ -23,7 +23,15 @@ SRC_URI = "git://github.com/intel/media-driver.git;protocol=https;nobranch=1 \
            file://0004-Fix-failed-4k-videowalll-test-case-and-color-corrupt.patch \
           "
 
-SRCREV = "14e2e7bcf1014186dbf1c099089c7c05cd880ae8"
+SRCREV = "dcccc9f760fd03e34b528b70b954c301ce509901"
+
+# media-driver 26.x adds 700+ per-platform include dirs. With the default
+# long source path (${BP}) this overflows GCC's COLLECT_GCC_OPTIONS env
+# string past the kernel MAX_ARG_STRLEN limit (E2BIG) when g++ execs cc1plus.
+# Unpack into a short "git" dir so each -I path is shorter, and force
+# CMake/Ninja to keep the compiler include lists in response files.
+BB_GIT_DEFAULT_DESTSUFFIX = "git"
+S = "${UNPACKDIR}/${BB_GIT_DEFAULT_DESTSUFFIX}"
 
 COMPATIBLE_HOST:x86-x32 = "null"
 
@@ -39,6 +47,7 @@ EXTRA_OECMAKE += " \
                    -DARCH=${MEDIA_DRIVER_ARCH} \
                    -DMEDIA_BUILD_FATAL_WARNINGS=OFF \
                    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+                   -DCMAKE_NINJA_FORCE_RESPONSE_FILE=ON \
 		  "
 
 CXXFLAGS:append:x86 = " -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
