@@ -15,7 +15,7 @@ inherit pkgconfig cmake
 INSANE_SKIP:${PN}-dbg += "buildpaths"
 
 SRC_URI = "git://github.com/embree/embree.git;protocol=https;branch=master"
-SRCREV = "ff9381774dc99fea81a932ad276677aad6a3d4dd"
+SRCREV = "f590db83ef6559387df7f6d8725c34fb7acf851d"
 
 COMPATIBLE_HOST = '(x86_64).*-linux'
 COMPATIBLE_HOST:libc-musl = "null"
