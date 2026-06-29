@@ -21,4 +21,6 @@ do_install() {
      cp -r ${S}/include/* ${D}${includedir}/onedpl
 }
 
-UPSTREAM_CHECK_GITTAGREGEX = "^oneDPL-(?P<pver>(\d+(\.\d+)+))-release$"
+# Upstream renamed release tags from oneDPL-X.Y.Z-release to
+# oneDPL-release-X.Y.Z; match the current scheme.
+UPSTREAM_CHECK_GITTAGREGEX = "^oneDPL-release-(?P<pver>\d+(\.\d+)+)$"
