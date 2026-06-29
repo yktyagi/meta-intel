@@ -12,8 +12,10 @@ SRC_URI = "https://github.com/intel/ethernet-linux-ixgbe/releases/download/v${PV
 
 SRC_URI[sha256sum] = "29f6787dfe81466f4776c0cd2998465ff63b773dc5fb0bc937960a9ebb29c216"
 
+# GitHub no longer renders release-asset filenames in the static HTML, so
+# match the release-tag links (vX.Y.Z) instead.
 UPSTREAM_CHECK_URI = "https://github.com/intel/ethernet-linux-ixgbe/releases"
-UPSTREAM_CHECK_REGEX = "ixgbe-(?P<pver>\d+(\.\d+)+)\.tar\.gz"
+UPSTREAM_CHECK_REGEX = "releases/tag/v(?P<pver>\d+(\.\d+)+)"
 
 CVE_PRODUCT = "linux:linux_kernel_ixgbe"
 
