@@ -22,7 +22,9 @@ SRC_URI = "git://github.com/intel/libva.git;protocol=https;branch=v2.23-branch \
 
 SRCREV = "dbf83dc3b1ce6bad46e1628aaf2da5ef731157b8"
 
-UPSTREAM_CHECK_URI = "https://github.com/intel/libva/releases"
+# Match only X.Y.Z release tags; skip the legacy date (20130827) and
+# wwNN-video weekly tags that otherwise resolve to a bogus newer version.
+UPSTREAM_CHECK_GITTAGREGEX = "^(?P<pver>\d+\.\d+\.\d+)$"
 
 DEPENDS = "libdrm"
 
