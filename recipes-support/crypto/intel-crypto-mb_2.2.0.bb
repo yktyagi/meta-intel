@@ -15,6 +15,10 @@ SRC_URI = "git://github.com/intel/ipp-crypto;protocol=https;nobranch=1 \
            "
 SRCREV = "afe5ee9a38d57da0ffa37df789ecd1261cbfa2ed"
 
+# Upstream switched to semantic-versioned vX.Y.Z tags; ignore the legacy
+# ippcp_YYYY.* tags which otherwise sort as a higher (bogus) version.
+UPSTREAM_CHECK_GITTAGREGEX = "^v(?P<pver>\d+(\.\d+)+)$"
+
 S = "${UNPACKDIR}/${PN}-${PV}/sources/ippcp/crypto_mb"
 
 DEPENDS = "openssl"
