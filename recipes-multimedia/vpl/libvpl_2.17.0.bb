@@ -13,6 +13,10 @@ SRC_URI = "git://github.com/intel/libvpl.git;protocol=https;branch=main \
             "
 SRCREV = "d77f9195cf495b937631607333288fd917ae8939"
 
+# Releases use vX.Y.Z tags; exclude the older v20YY.* date-style tags which
+# would otherwise sort as a higher (bogus) version.
+UPSTREAM_CHECK_GITTAGREGEX = "^v(?P<pver>(?!20\d\d)\d+(\.\d+)+)$"
+
 inherit cmake pkgconfig
 
 DEPENDS += "libva"
