@@ -31,6 +31,10 @@ SRC_URI = " \
 "
 SRC_URI[installer.sha256sum] = "155a52896bd24239ddc733f487eccb2af5cad9957eed1e2bfe60ce1453694e5b"
 
+# Distributed as an opaque offline installer from a per-release download UUID
+# URL; there is no version listing for the checker to scan.
+RECIPE_NO_UPDATE_REASON = "Opaque offline installer; no upstream version listing"
+
 S = "${UNPACKDIR}"
 
 inherit bin_package
