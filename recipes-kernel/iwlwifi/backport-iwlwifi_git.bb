@@ -20,6 +20,10 @@ inherit module features_check
 PV = "105"
 SRCREV = "973946e4d416728dda7282f87c5d59d9bc3133ea"
 
+# Releases are published as release/coreNNN git branches, not tags, so the
+# upstream version checker (which scans tags) cannot detect new versions.
+RECIPE_NO_UPDATE_REASON = "Versioned via release/coreNNN branches, not tags"
+
 SRC_URI = " \
            git://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/backport-iwlwifi;branch=release/core${PV};protocol=https \
            file://0001-Makefile.real-skip-host-install-scripts.patch \
