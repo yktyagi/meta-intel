@@ -29,4 +29,7 @@ do_install:append() {
         chrpath -d ${D}${bindir}/* ${D}${libdir}/*${SOLIBS}
 }
 
+# GitHub no longer renders release-asset filenames in the static HTML, so
+# match the release-tag links (vX.Y.Z) instead.
 UPSTREAM_CHECK_URI = "https://github.com/RenderKit/oidn/releases"
+UPSTREAM_CHECK_REGEX = "releases/tag/v(?P<pver>\d+(\.\d+)+)"
