@@ -43,9 +43,11 @@ EXTRA_OECMAKE:append:class-target = " \
                                      -DCMAKE_CROSSCOMPILING_EMULATOR=${WORKDIR}/qemuwrapper \
                                      "
 
-# Newer compilers emit -Wsfinae-incomplete in templates included by image.cpp/task_information.cpp.
-# Keep -Werror globally but do not fail on this single warning class.
-CXXFLAGS:append = " -Wno-error=sfinae-incomplete"
+# GCC 16 emits -Wsfinae-incomplete in templates included by image.cpp/task_information.cpp.
+# Silence just this warning class so it does not trip -Werror. Use the plain -Wno- form
+# (not -Wno-error=): the option does not exist on GCC 15, where -Wno-error=<unknown> is a
+# hard error, while -Wno-<unknown> is tolerated. Harmless on GCC 16, where it disables it.
+CXXFLAGS:append = " -Wno-sfinae-incomplete"
 
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[levelzero] = "-DBUILD_WITH_L0=ON, -DBUILD_WITH_L0=OFF, level-zero"
